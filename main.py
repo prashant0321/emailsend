@@ -67,13 +67,49 @@ async def user_detail(request: Request, email: str, db: Session = Depends(get_db
         return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse("user_details.html", {"request": request, "user": user})
 
-@app.get("/dashboard", response_class=HTMLResponse)
+@app.get("/dashboard/{email}", response_class=HTMLResponse)
 async def dashboard(request: Request, email: str, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         return RedirectResponse(url="/", status_code=303)
     
     return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
+
+
+
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from pydantic import BaseModel, EmailStr
+import os
+
+# Email Configuration
+conf = ConnectionConfig(
+    MAIL_USERNAME="1234@example.com",
+    MAIL_PASSWORD="12345",
+    MAIL_FROM="admin@example.com",
+    MAIL_PORT=587,
+    MAIL_SERVER="smtp.gmail.com",
+    MAIL_TLS=True,
+    MAIL_SSL=False,
+    USE_CREDENTIALS=True
+)
+
+class EmailSchema(BaseModel):
+    email: EmailStr
+    subject: str
+    message: str
+
+@app.post("/sendemail")
+async def send_email(email_data: EmailSchema):
+    message = MessageSchema(
+        subject=email_data.subject,
+        recipients=[email_data.email],
+        body=email_data.message,
+        subtype="plain"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+    return {"message": f"Email sent successfully to {email_data.email}"}
 
 
 
