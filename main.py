@@ -58,7 +58,12 @@ async def login(
     if not user or not pwd_context.verify(password, user.password):  # Verify hashed password
         return RedirectResponse(url="/?error=Invalid+credentials", status_code=303)
     
-    return RedirectResponse(url=f"/dashboard?email={email}", status_code=303)
+    return RedirectResponse(url=f"/user/{email}", status_code=303)
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    error = request.query_params.get("error", "")
+    return templates.TemplateResponse("login.html", {"request": request, "error": error})
 
 @app.get("/user/{email}", response_class=HTMLResponse)
 async def user_detail(request: Request, email: str, db: Session = Depends(get_db)):
@@ -74,43 +79,6 @@ async def dashboard(request: Request, email: str, db: Session = Depends(get_db))
         return RedirectResponse(url="/", status_code=303)
     
     return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
-
-
-
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
-from pydantic import BaseModel, EmailStr
-import os
-
-# Email Configuration
-conf = ConnectionConfig(
-    MAIL_USERNAME="1234@example.com",
-    MAIL_PASSWORD="12345",
-    MAIL_FROM="admin@example.com",
-    MAIL_PORT=587,
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_TLS=True,
-    MAIL_SSL=False,
-    USE_CREDENTIALS=True
-)
-
-class EmailSchema(BaseModel):
-    email: EmailStr
-    subject: str
-    message: str
-
-@app.post("/sendemail")
-async def send_email(email_data: EmailSchema):
-    message = MessageSchema(
-        subject=email_data.subject,
-        recipients=[email_data.email],
-        body=email_data.message,
-        subtype="plain"
-    )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
-    return {"message": f"Email sent successfully to {email_data.email}"}
-
 
 
 

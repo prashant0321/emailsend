@@ -1,13 +1,24 @@
 from sqlalchemy import Column, String
-from database import Base
+from sqlalchemy.ext.declarative import declarative_base
+from passlib.context import CryptContext
+
+Base = declarative_base()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class User(Base):
     __tablename__ = "users"
+    email = Column(String, primary_key=True, index=True)
+    name = Column(String, index=True)
+    phone = Column(String, index=True)
+    password = Column(String)
 
-    email = Column(String, primary_key=True, index=True, nullable=False, unique=True)
-    name = Column(String, nullable=False)
-    phone = Column(String, nullable=False)
-    password = Column(String, nullable=False)  # Ensure password is properly hashed
+    def set_password(self, password: str):
+        self.hashed_password = pwd_context.hash(password)
+
+    def verify_password(self, password: str) -> bool:
+        return pwd_context.verify(password, self.hashed_password)
+
+
 
 
 
