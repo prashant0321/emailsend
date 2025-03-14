@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext  # Import Passlib for hashing
+from passlib.context import CryptContext  
 from database import engine, get_db
 import models
 
@@ -72,13 +72,14 @@ async def user_detail(request: Request, email: str, db: Session = Depends(get_db
         return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse("user_details.html", {"request": request, "user": user})
 
-@app.get("/dashboard/{email}", response_class=HTMLResponse)
+@app.get("/user/dashboard/{email}", response_class=HTMLResponse)
 async def dashboard(request: Request, email: str, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == email).first()
+    users = db.query(models.User).all()
     if not user:
         return RedirectResponse(url="/", status_code=303)
     
-    return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
+    return templates.TemplateResponse("dashboard.html", {"request": request, "users": users})
 
 
 
