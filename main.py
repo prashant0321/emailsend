@@ -82,4 +82,39 @@ async def dashboard(request: Request, email: str, db: Session = Depends(get_db))
     return templates.TemplateResponse("dashboard.html", {"request": request, "users": users})
 
 
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from pydantic import EmailStr, BaseModel
+
+conf = ConnectionConfig(
+    MAIL_USERNAME="admin@gmail.com",
+    MAIL_PASSWORD="admin123",
+    MAIL_FROM="admin@gmail.com",
+    MAIL_PORT=587,
+    MAIL_SERVER="smtp.gmail.com",
+    MAIL_STARTTLS=True,
+    MAIL_SSL_TLS=False,
+    USE_CREDENTIALS=True
+)
+
+class EmailSchema(BaseModel):
+    email: EmailStr
+    subject: str
+    message: str
+
+@app.post("/send_email")
+async def send_email(email_data: EmailSchema):
+    message = MessageSchema(
+        subject=email_data.subject,
+        recipients=[email_data.email],
+        body=email_data.message,
+        subtype="plain"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+    return {"message": "Email sent successfully"}
+
+
+
+
 
